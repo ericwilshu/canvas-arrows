@@ -1,11 +1,12 @@
 $(function() {
   // Now all the arrow object code is put together in one function.
   // Now we can make more than one arrow by repeatedly calling this function.
-  function createArrow(centerX, centerY, length, color, thickness) {
+  function createArrow(centerX, centerY, offsetX, offsetY, length, color, thickness) {
 
     // Define the arrow object's properties.
     arrow = {};
-    arrow.center = {x: centerX, y: centerY};
+    arrow.center = {x: centerX + offsetX, y: centerY + offsetY};
+    arrow.offset = {x: offsetX, y: offsetY};
     arrow.length = length;
     arrow.color = color;
     arrow.thickness = thickness;
@@ -44,33 +45,39 @@ $(function() {
       this.length = (mouseDist - 25) * 2;
     }
 
+    arrow.updateLocation = function(mouseX, mouseY) {
+      this.center.x = mouseX + this.offset.x;
+      this.center.y = mouseY + this.offset.y;
+    }
+
     // Returns the arrow to the callling function.
     return arrow;
   };
 
+  //function eventMouseClick(e) {}
+
   // This is the function to run every frame of the program.
   function drawFrame(arrowList) {
-    $("#canvas").mousemove(function(e) {
-      mouseX = e.pageX - canvas.offsetLeft;
-      mouseY = e.pageY - canvas.offsetTop;
-      //console.log("mouseX: " + mouseX + "   mouseY: " + mouseY);
-    });
-
     // Use global variables to draw the canvas bg and frame.
     context.fillStyle = bgColor;
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.strokeStyle = frameColor;
     context.strokeRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = "#FF0000";
+    context.fillRect(focusX - 4, focusY - 4, 8, 8);
 
     // Since there are now a whole bunch of arrows in an array, we loop
     // through the array, updating the rotation and then drawing each one.
     for (var i = 0; i < arrowList.length; i++) {
       arrow = arrowList[i];
       // Update the arrow's rotation.
-      arrow.updateRotation(mouseX, mouseY);
+      arrow.updateRotation(focusX, focusY);
 
       // Update the arrow's length.
-      arrow.updateLength(mouseX, mouseY);
+      //arrow.updateLength(focusX, focusY);
+
+      // Udate the arrow's location.
+      arrow.updateLocation(mouseX, mouseY);
 
       // Save the context, set the transformation matrix,
       // translate to the arrow center, draw the arrow, retstore the context.
@@ -99,6 +106,20 @@ $(function() {
   var frameColor = "#FFFFFF";
   var mouseX = canvas.width / 2;
   var mouseY = canvas.height / 2;
+  var focusX = mouseX;
+  var focusY = mouseY;
+
+  // Set the mousemove event to capture the mouse location
+  $("#canvas").mousemove(function(e) {
+    mouseX = e.pageX - canvas.offsetLeft;
+    mouseY = e.pageY - canvas.offsetTop;
+    //console.log("mouseX: " + mouseX + "   mouseY: " + mouseY);
+  });
+
+  $("#canvas").click(function(e) {
+    focusX = mouseX;
+    focusY = mouseY;
+  })
 
   // Initialize the arrowList array. Define common properties for all arrows.
   var arrowList = [];
@@ -109,14 +130,10 @@ $(function() {
   var arrowSeparation = 20;
 
   // Use a loop to locate the center of each arrow separately, and add it to the arrowList.
-  for (var y = 0; y <= canvas.height; y += arrowSeparation) {
-    arrowList[arrowCount++] = createArrow(0, y, arrowLength, arrowColor, arrowThickness);
-    arrowList[arrowCount++] = createArrow(canvas.width, y, arrowLength, arrowColor, arrowThickness);
-  }
-  for (var x = arrowSeparation; x < canvas.width; x += arrowSeparation) {
-    arrowList[arrowCount++] = createArrow(x, 0, arrowLength, arrowColor, arrowThickness);
-    arrowList[arrowCount++] = createArrow(x, canvas.height, arrowLength, arrowColor, arrowThickness);
-  }
+  arrowList[0] = createArrow(focusX, focusY, -25, -25, 40, arrowColor, 2);
+  arrowList[1] = createArrow(focusX, focusY, 25, -25, 40, arrowColor, 2);
+  arrowList[2] = createArrow(focusX, focusY, 25, 25, 40, arrowColor, 2);
+  arrowList[3] = createArrow(focusX, focusY, -25, 25, 40, arrowColor, 2);
 
   // Start it all off.
   gameLoop();
